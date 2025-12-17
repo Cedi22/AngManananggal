@@ -17,9 +17,9 @@ public class ManananggalAI : MonoBehaviour
 
     [Header("Audio")]
     public AudioSource audioSource;
-    public AudioClip[] idleVoices;       // <--- MULTIPLE
-    public AudioClip[] chaseVoices;      // <--- MULTIPLE
-    public AudioClip[] disappearVoices;  // <--- MULTIPLE
+    public AudioClip[] idleVoices;
+    public AudioClip[] chaseVoices;
+    public AudioClip[] disappearVoices;
     public AudioClip jumpScareSFX;
 
     [Header("Jumpscare Effects")]
@@ -28,13 +28,21 @@ public class ManananggalAI : MonoBehaviour
     public CanvasGroup fadePanel;
     public float fadeSpeed = 2f;
 
-    private bool isChasing = false;
-    private bool hasDisappeared = false;
-    private bool hasJumpscared = false;
+    [Header("Game Over")]
+    public GameOverScreen gameOverScreen;
+    public float gameOverDelay = 2.5f;
+
+    [Header("Player Control")]
+    public MonoBehaviour playerInputScript; // drag your movement/look script here
+
+    private bool isChasing;
+    private bool hasDisappeared;
+    private bool hasJumpscared;
 
     private void Start()
     {
         cutsceneCamera.gameObject.SetActive(false);
+        fadePanel.alpha = 0f;
     }
 
     private void Update()
@@ -43,29 +51,24 @@ public class ManananggalAI : MonoBehaviour
 
         float distance = Vector3.Distance(transform.position, player.position);
 
-        // Start chasing
         if (!isChasing && distance <= detectionRange)
         {
             isChasing = true;
             agent.SetDestination(player.position);
-
             PlayRandom(chaseVoices);
         }
 
-        // Stop chase
         if (isChasing && distance >= stopChaseRange)
         {
             isChasing = false;
             StartCoroutine(Disappear());
         }
 
-        // Keep following player
         if (isChasing)
         {
             agent.SetDestination(player.position);
         }
 
-        // Jumpscare trigger
         if (isChasing && distance <= jumpscareDistance)
         {
             StartCoroutine(JumpScare());
@@ -75,8 +78,7 @@ public class ManananggalAI : MonoBehaviour
     private void PlayRandom(AudioClip[] clips)
     {
         if (clips == null || clips.Length == 0) return;
-        int index = Random.Range(0, clips.Length);
-        audioSource.PlayOneShot(clips[index]);
+        audioSource.PlayOneShot(clips[Random.Range(0, clips.Length)]);
     }
 
     private IEnumerator Disappear()
@@ -85,7 +87,6 @@ public class ManananggalAI : MonoBehaviour
         hasDisappeared = true;
 
         yield return new WaitForSeconds(disappearDelay);
-
         PlayRandom(disappearVoices);
         model.SetActive(false);
     }
@@ -95,15 +96,19 @@ public class ManananggalAI : MonoBehaviour
         if (hasJumpscared) yield break;
         hasJumpscared = true;
 
-        // Switch to jumpscare camera
+        // STOP EVERYTHING
+        agent.isStopped = true;
+        if (playerInputScript != null)
+            playerInputScript.enabled = false;
+
+        // Camera switch
         playerCamera.gameObject.SetActive(false);
         cutsceneCamera.gameObject.SetActive(true);
 
-        // Scream
+        // Audio
         if (jumpScareSFX != null)
             audioSource.PlayOneShot(jumpScareSFX);
 
-        // Camera shake
         yield return StartCoroutine(CameraShake(0.4f, 0.3f));
 
         // Fade to black
@@ -113,13 +118,18 @@ public class ManananggalAI : MonoBehaviour
             yield return null;
         }
 
-        UnityEngine.SceneManagement.SceneManager.LoadScene("SampleScene");
+        // Freeze cameras permanently
+        cutsceneCamera.enabled = false;
+
+        yield return new WaitForSeconds(gameOverDelay);
+
+        gameOverScreen.Setup();
     }
 
     private IEnumerator CameraShake(float duration, float amount)
     {
         Vector3 originalPos = cutsceneCamera.transform.localPosition;
-        float timer = 0;
+        float timer = 0f;
 
         while (timer < duration)
         {
