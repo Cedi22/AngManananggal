@@ -11,17 +11,26 @@ public class GameOverScreen : MonoBehaviour
 
     private string[] quotes =
     {
-        "“DO NOT LOOK UP.” — Manananggal, probably",
-        "“I heard breathing behind me. It was mine.” — Anonymous survivor",
-        "“She only attacks at night. I play at night.” — Bad decision #37",
-        "“The scream wasn’t scripted.” — Playtester #4",
-        "“I survived by not being brave.” — Local coward",
-        "“Running is a valid strategy.” — Ancient Filipino wisdom",
-        "“The wings weren’t the worst part.” — Missing person report",
-        "“Turn around. Just kidding. Don’t.” — Game tips",
-        "“I paused the game. She didn’t.” — Final thought",
-        "“Salt was cheaper than courage.” — Village elder",
-        "“GET GUD.” — Albert Einstein"
+        "\"The ceiling was dripping. It wasn't rain.\" — Last journal entry",
+        "\"I felt her breath on my neck... she has no lungs.\" — Survivor testimony",
+        "\"She smiled at me. Her teeth went all the way back.\" — Medical report",
+        "\"The sound of her wings never stops in my head.\" — Psychiatric patient",
+        "\"I saw her torso crawling. The legs were still walking.\" — Police report",
+        "\"She whispered my name. I never told her my name.\" — Missing person",
+        "\"Her tongue reached the floor from the ceiling.\" — Crime scene notes",
+        "\"I looked up. She was already looking down.\" — Final mistake",
+        "\"The proboscis pierced the roof like butter.\" — Witness statement",
+        "\"She left. Her shadow stayed and watched me.\" — Asylum patient #4",
+        "\"I heard her eating in the attic. I live alone.\" — 911 call transcript",
+        "\"Her eyes reflected no light. They absorbed it.\" — Forensic notes",
+        "\"The vinegar didn't work. Nothing works.\" — Village elder's warning",
+        "\"She peeled apart at the waist. It made no sound.\" — Survivor's account",
+        "\"I pretended to sleep. She knew I was pretending.\" — Anonymous",
+        "\"Her innards dragged across my roof all night.\" — Last testimony",
+        "\"She sang my mother's lullaby. My mother died screaming.\" — Orphan's diary",
+        "\"The blood dripped upward into her mouth.\" — Coroner's observation",
+        "\"I counted her ribs through the window. She had too many.\" — Case file #217",
+        "\"She asked to come inside. I didn't answer. She came anyway.\" — Final words"
     };
 
     public void Setup()
@@ -44,12 +53,22 @@ public class GameOverScreen : MonoBehaviour
     public void Retry()
     {
         Time.timeScale = 1f;
+        
+        // Lock cursor for gameplay
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+        
         SceneManager.LoadScene("SampleScene");
     }
 
     public void MainMenu()
     {
         Time.timeScale = 1f;
+        
+        // Keep cursor visible for main menu
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+        
         SceneManager.LoadScene("TownScene");
     }
 }
