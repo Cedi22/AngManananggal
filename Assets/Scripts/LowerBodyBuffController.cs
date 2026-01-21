@@ -1,11 +1,14 @@
 using UnityEngine;
 using UnityEngine.AI;
+using TMPro;
+using UnityEngine.SceneManagement;
 
 public class LowerBodyBuffController : MonoBehaviour
 {
     [Header("References")]
     public ManananggalAI manananggalAI;
     public NavMeshAgent manananggalAgent;
+    public TMP_Text timerText;
 
     [Header("Timer")]
     public float duration = 180f;
@@ -20,10 +23,14 @@ public class LowerBodyBuffController : MonoBehaviour
     private float baseSpeed;
     private float baseDetection;
 
+    [Header("Scene Transition")]
+    public string bossFightSceneName = "BossFight";
     private void Start()
     {
         baseSpeed = manananggalAgent.speed;
         baseDetection = manananggalAI.detectionRange;
+
+        timerText.gameObject.SetActive(false);
     }
 
     private void Update()
@@ -31,36 +38,42 @@ public class LowerBodyBuffController : MonoBehaviour
         if (!active) return;
 
         timer -= Time.deltaTime;
-        float t = 1f - (timer / duration);
+        UpdateTimerUI();
 
-        // Stronger ramp
+        float t = 1f - (timer / duration);
         manananggalAgent.speed = Mathf.Lerp(baseSpeed, baseSpeed + speedBonus, t);
         manananggalAI.detectionRange = Mathf.Lerp(baseDetection, baseDetection + detectionBonus, t);
 
         if (timer <= 0f)
-        {
             EndCurse();
-        }
     }
 
     public void StartCurse()
     {
         active = true;
         timer = duration;
+        timerText.gameObject.SetActive(true);
 
-        Debug.Log("⏳ Curse countdown started");
+        Debug.Log("⏳ Curse started");
     }
 
-    private void EndCurse()
+    private void UpdateTimerUI()
     {
-        active = false;
-
-        manananggalAgent.speed = baseSpeed;
-        manananggalAI.detectionRange = baseDetection;
-
-        Debug.Log("☠ Curse ended");
-
-        // TODO: TELEPORT LOWER BODY / LOAD SCENE
-        // SceneManager.LoadScene("LowerBodyScene");
+        int m = Mathf.FloorToInt(timer / 60f);
+        int s = Mathf.FloorToInt(timer % 60f);
+        timerText.text = $"{m}:{s:00}";
     }
+
+private void EndCurse()
+{
+    active = false;
+
+    manananggalAgent.speed = baseSpeed;
+    manananggalAI.detectionRange = baseDetection;
+    timerText.gameObject.SetActive(false);
+
+    Debug.Log("☠ Curse ended — loading ending scene");
+
+    SceneManager.LoadScene("EndCutscene");
+}
 }

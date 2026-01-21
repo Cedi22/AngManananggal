@@ -2,8 +2,8 @@ using UnityEngine;
 
 public class MagicSarapSpawner : MonoBehaviour
 {
-    [Header("Existing Collectible")]
-    public Transform collectible; // DRAG the MagicSarap object here
+    [Header("Collectible")]
+    public Transform collectible;
 
     [Header("Map Bounds")]
     public float minX = -147.15f;
@@ -11,39 +11,54 @@ public class MagicSarapSpawner : MonoBehaviour
     public float minZ = -184f;
     public float maxZ = 104.2f;
 
-    [Header("Tree Settings")]
-    public LayerMask treeLayer;
-    public float spawnOffsetFromTree = 2f;
-    public float treeSearchRadius = 200f;
+    [Header("Raycast Settings")]
+    public LayerMask groundLayer;
+    public LayerMask obstacleLayer;
+    public float rayHeight = 50f;
+    public float spawnHeightOffset = 0.1f;
+    public float obstacleCheckRadius = 0.5f;
+
+    [Header("Attempts")]
+    public int maxAttempts = 50;
 
     private void Start()
     {
-        MoveNearTree();
+        SpawnSafely();
     }
 
-    void MoveNearTree()
+    void SpawnSafely()
     {
-        Collider[] trees = Physics.OverlapSphere(Vector3.zero, treeSearchRadius, treeLayer);
-
-        if (trees.Length == 0)
+        for (int i = 0; i < maxAttempts; i++)
         {
-            Debug.LogWarning("No trees found!");
-            return;
+            Vector3 randomPos = new Vector3(
+                Random.Range(minX, maxX),
+                rayHeight,
+                Random.Range(minZ, maxZ)
+            );
+
+            // Raycast DOWN to find ground
+            if (Physics.Raycast(randomPos, Vector3.down, out RaycastHit hit, 100f, groundLayer))
+            {
+                Vector3 spawnPos = hit.point + Vector3.up * spawnHeightOffset;
+
+                // Check if inside obstacle
+                bool blocked = Physics.CheckSphere(
+                    spawnPos,
+                    obstacleCheckRadius,
+                    obstacleLayer
+                );
+
+                if (!blocked)
+                {
+                    collectible.position = spawnPos;
+                    Debug.Log("✅ MagicSarap spawned safely");
+                    return;
+                }
+            }
         }
 
-        Collider chosenTree = trees[Random.Range(0, trees.Length)];
-
-        Vector3 direction = Random.insideUnitSphere;
-        direction.y = 0f;
-        direction.Normalize();
-
-        Vector3 pos = chosenTree.transform.position + direction * spawnOffsetFromTree;
-
-        // Clamp to map bounds
-        pos.x = Mathf.Clamp(pos.x, minX, maxX);
-        pos.z = Mathf.Clamp(pos.z, minZ, maxZ);
-        pos.y = 0f;
-
-        collectible.position = pos;
+        Debug.LogWarning("❌ Failed to find safe spawn location");
     }
+    
 }
+    

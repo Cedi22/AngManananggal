@@ -11,4 +11,10 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/SampleScene.unity
     guid: 9fc0d4010bbf28b4594072e72b8655ab
+  - enabled: 0
+    path: Assets/Scenes/BossFight.unity
+    guid: 5e6793a4b72876d4e83d00925da4ef13
+  - enabled: 1
+    path: Assets/EndCutscene.unity
+    guid: a030ad8626434704a96978a12f5b7b8e
   m_configObjects: {}

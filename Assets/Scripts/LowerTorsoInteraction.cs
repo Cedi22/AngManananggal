@@ -1,39 +1,64 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using TMPro;
 
 public class LowerTorsoInteraction : MonoBehaviour
 {
     [Header("References")]
-    public MagicSarapPlayerItem playerItem;
-    public Canvas interactionCanvas;
+    public TMP_Text interactText;
     public LowerBodyBuffController buffController;
 
+    [Header("Audio")]
+    public AudioSource audioSource;
+    public AudioClip sprinkleSound;
+
+    private MagicSarapPlayerItem playerItem;
     private bool playerInRange;
     private bool hasBeenUsed;
 
     private void Start()
     {
-        interactionCanvas.gameObject.SetActive(false);
-        gameObject.SetActive(false); // spawn later
+        if (interactText != null)
+            interactText.gameObject.SetActive(false);
+
+        hasBeenUsed = false;
     }
 
     private void Update()
     {
-        if (!playerInRange) return;
-        if (hasBeenUsed) return;
+        if (!playerInRange || hasBeenUsed) return;
+        if (Keyboard.current == null) return;
 
-        if (Keyboard.current.eKey.wasPressedThisFrame)
+        if (Keyboard.current.eKey.wasPressedThisFrame &&
+            playerItem != null &&
+            playerItem.HasItem())
         {
             SprinkleBody();
+        }
+        else
+        {
+            UpdateInteractText();
         }
     }
 
     private void SprinkleBody()
     {
         hasBeenUsed = true;
-        interactionCanvas.gameObject.SetActive(false);
 
-        buffController.StartCurse(); // start countdown + aggression
+        if (interactText != null)
+            interactText.gameObject.SetActive(false);
+
+        // 🔊 Play sprinkle sound
+        if (audioSource != null && sprinkleSound != null)
+            audioSource.PlayOneShot(sprinkleSound);
+
+        // 🍬 Consume Magic Sarap
+        if (playerItem != null)
+            playerItem.ConsumeItem();
+
+        // ☠ Start curse
+        if (buffController != null)
+            buffController.StartCurse();
 
         Debug.Log("🩸 Body sprinkled — curse started");
     }
@@ -41,11 +66,12 @@ public class LowerTorsoInteraction : MonoBehaviour
     private void OnTriggerEnter(Collider other)
     {
         if (!other.CompareTag("Player")) return;
-        if (!playerItem.HasItem()) return;
-        if (hasBeenUsed) return;
 
+        playerItem = other.GetComponentInChildren<MagicSarapPlayerItem>();
         playerInRange = true;
-        interactionCanvas.gameObject.SetActive(true);
+
+        UpdateInteractText();
+        Debug.Log("✅ Interaction available");
     }
 
     private void OnTriggerExit(Collider other)
@@ -53,12 +79,48 @@ public class LowerTorsoInteraction : MonoBehaviour
         if (!other.CompareTag("Player")) return;
 
         playerInRange = false;
-        interactionCanvas.gameObject.SetActive(false);
+        playerItem = null;
+
+        if (interactText != null)
+            interactText.gameObject.SetActive(false);
     }
 
-    // Called externally when item is picked up
+    private void UpdateInteractText()
+    {
+        if (interactText == null || hasBeenUsed) return;
+
+        if (playerItem != null && playerItem.HasItem())
+        {
+            interactText.text = "[E] Sprinkle the body";
+            interactText.gameObject.SetActive(true);
+        }
+        else
+        {
+            interactText.gameObject.SetActive(false);
+        }
+    }
+
     public void EnableLowerTorso()
     {
+        Debug.Log("🧩 Lower torso enabled");
         gameObject.SetActive(true);
+
+        Collider col = GetComponent<Collider>();
+        if (col == null) return;
+
+        Collider[] hits = Physics.OverlapBox(
+            col.bounds.center,
+            col.bounds.extents,
+            Quaternion.identity
+        );
+
+        foreach (var hit in hits)
+        {
+            if (hit.CompareTag("Player"))
+            {
+                OnTriggerEnter(hit);
+                break;
+            }
+        }
     }
 }
